@@ -1,40 +1,3 @@
-# import streamlit as st
-# from transcript import extract_transcript_and_metadata
-
-# # st.title("🎬💬 ClipChat: Instantly summarize and chat with YouTube videos")
-
-# st.subheader("",divider="rainbow")
-
-# link = st.text_input("Enter the Youtube video link")
-
-
-
-# with st.sidebar:
-#     if link:
-#         st.video(link)
-
-#         sum_btn = st.button("abcd")
-
-# # btn = st.button("Process and chat")
-
-
-# btn = st.button("process")
-
-# if btn and link: 
-#     docs = extract_transcript_and_metadata(link)
-#     st.write(docs["transcript"])
-
-
-
-
-
-
-
-
-
-
-
-
 import streamlit as st
 from streamlit_chat import message
 from langchain_community.embeddings import SentenceTransformerEmbeddings
@@ -46,7 +9,7 @@ from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 import asyncio
 
-st.title("🎬💬 ClipChat: Instantly Chat with YouTube videos")
+st.title("🎬💬 ClipChat: Seamless YouTube Video Chats & Analytics")
 
 groq_api_key = st.secrets["GROQ_API_KEY"]
 llm = ChatGroq(groq_api_key=groq_api_key, model_name="Llama3-8b-8192")
@@ -58,7 +21,7 @@ def video_metadata(url):
     docs = loader.load()
     if docs and isinstance(docs, list) and len(docs) > 0:
         metadata = docs[0].metadata
-        keys_to_remove = ['source', 'thumbnail_url', 'description']
+        keys_to_remove = ['thumbnail_url', 'description']
         for key in keys_to_remove:
             metadata.pop(key, None)
         return metadata
@@ -81,19 +44,30 @@ async def response_generator(vectordb, query):
     result = await asyncio.to_thread(qa_chain, {"query": query})
     return result["result"]
 
-# Sidebar for input
+if 'url' not in st.session_state:
+    st.session_state['url'] = ''
+
+
 with st.sidebar:
     st.header("🔗 YouTube Video Input")
-    url = st.text_input("Enter Youtube Video url:")
+    url = st.text_input("Enter YouTube Video URL:", st.session_state['url'])
     submit_button = st.button('Submit and Load Data')
     st.markdown("---")
-    if url :
-        st.video(url)
-        metadata = video_metadata(url)
-        for key, value in metadata.items():
-            st.sidebar.markdown(f"**✔️{key.upper()} :** {value}")
-        # st.sidebar.video(url)
     
+    # Check if the submit button is clicked or URL is already in session state
+    if submit_button:
+        st.session_state['url'] = url
+
+    # Display the video and metadata if URL is present in session state
+    if st.session_state['url']:
+        st.video(st.session_state['url'])
+        metadata = video_metadata(st.session_state['url'])
+        for key, value in metadata.items():
+            st.markdown(f"**✔️{key.upper()} :** {value}")
+
+
+
+
     
 
 # Main chat interface
