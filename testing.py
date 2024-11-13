@@ -8,30 +8,29 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 import asyncio
-from src.analysis import get_channel_data, get_video_and_channel_id, get_video_comments, get_video_data
-
-st.set_page_config(page_title="ClipChat", page_icon="🎬")
 
 st.title("🎬💬 ClipChat: Seamless YouTube Video Chats & Analytics")
 
 groq_api_key = st.secrets["GROQ_API_KEY"]
-yt_api_key = st.secrets["YOUTUBE_DATA_API"]
+
 llm = ChatGroq(groq_api_key=groq_api_key, model_name="Llama3-8b-8192")
 
 @st.cache_resource
 def video_metadata(url):
-    video_id, channel_id = get_video_and_channel_id(url,yt_api_key)
-    video_data = get_video_data(video_id,yt_api_key)
-
-    metadata = {"title": video_data['snippet']['title'],
-                "Views" : int(video_data['statistics']['viewCount']),
-                "Likes" : int(video_data['statistics'].get('likeCount', 0))}
-    return metadata
     
+    loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
+    docs = loader.load()
+    if docs and isinstance(docs, list) and len(docs) > 0:
+        metadata = docs[0].metadata
+        keys_to_remove = ['thumbnail_url', 'description']
+        for key in keys_to_remove:
+            metadata.pop(key, None)
+        return metadata
+    return {}
 
 @st.cache_resource
 def load_and_process_data(url):
-    loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
+    loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
     data = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100)
     splits = text_splitter.split_documents(data)

@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 from src.analysis import get_channel_data, get_video_and_channel_id, get_video_comments, get_video_data
-API_KEY = "AIzaSyCvK1NgmC04lkoMMXS7dYDjCSlLM1Ymb38"
+API_KEY = st.secrets["YOUTUBE_DATA_API"]
 # link = st.text_input("Enter your link")
 link = st.session_state['url']
 # btn = st.button("Analyze")
@@ -101,7 +101,8 @@ if link:
     fig = px.pie(filtered_df, values='Count', names='Metric', title='Video Statistics', hole=0.3)
     st.plotly_chart(fig)
 
-    max_comments = st.slider("Select the number of comments to fetch", min_value=10, max_value=500, step=10, value=50)
+    total_comments = int(video_data['statistics']['commentCount'])
+    max_comments = st.slider("Select the number of comments to fetch", min_value=5, max_value= total_comments, step=5, value=10)
     comments_df = get_video_comments(video_id, API_KEY, max_comments)
     st.dataframe(comments_df)
 
